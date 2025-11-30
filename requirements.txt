@@ -1,0 +1,17 @@
+# Discord bot
+py-cord>=2.4.0
+
+# Database
+asyncpg>=0.29.0
+
+# Configuration
+python-dotenv>=1.0.0
+
+# YAML parsing (for roles config)
+PyYAML>=6.0
+
+# Development (optional, uncomment when needed)
+# pytest>=7.4.0
+# pytest-asyncio>=0.21.0
+# black>=23.0.0
+# ruff>=0.1.0
