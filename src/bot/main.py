@@ -1,2 +1,61 @@
 """Main bot entry point."""
-# TODO: DAY02 - implement bot initialization
+
+import discord
+from discord.ext import commands
+import logging
+
+from .config import Config
+
+# Setup logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger("xpbot")
+
+
+# Bot setup with intents
+intents = discord.Intents.default()
+intents.voice_states = True  # Required for voice tracking (DAY07+)
+intents.guilds = True
+intents.members = True  # Required for member info
+
+bot = discord.Bot(intents=intents)
+
+
+@bot.event
+async def on_ready():
+    """Called when bot is ready and connected."""
+    logger.info(f"Bot logged in as {bot.user} (ID: {bot.user.id})")
+    logger.info(f"Connected to {len(bot.guilds)} guild(s)")
+    logger.info("XPBot is ready!")
+
+
+@bot.slash_command(name="ping", description="Check if bot is online")
+async def ping(ctx: discord.ApplicationContext):
+    """Simple ping command to verify bot is responding."""
+    latency_ms = round(bot.latency * 1000)
+    await ctx.respond(
+        f"🤖 **XPBot online!**\n"
+        f"Latency: `{latency_ms}ms`\n"
+        f"Ready to track voice XP!"
+    )
+    logger.info(f"/ping used by {ctx.author} in {ctx.guild.name}")
+
+
+def main():
+    """Start the bot."""
+    logger.info("Starting Discord XP Bot...")
+    logger.info(f"XP Rate: {Config.XP_PER_MINUTE} XP/min")
+
+    try:
+        bot.run(Config.DISCORD_TOKEN)
+    except discord.LoginFailure:
+        logger.error("Failed to login - check your DISCORD_TOKEN in .env")
+    except Exception as e:
+        logger.error(f"Bot crashed: {e}", exc_info=True)
+
+
+if __name__ == "__main__":
+    main()
