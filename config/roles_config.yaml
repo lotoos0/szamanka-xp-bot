@@ -1,0 +1,41 @@
+# Voice-tier roles configuration
+# Roles are assigned based on total time spent in voice channels
+# Bot will automatically assign the highest tier role the user qualifies for
+# and remove lower tier roles
+
+guilds:
+  # Replace with your actual Discord server ID
+  "123456789012345678":
+    tiers:
+      # Rookie - starting role for anyone who has joined voice
+      # min_minutes = 0 means this role is assigned immediately
+      - name: "Rookie"
+        role_id: 111111111111111111  # Replace with actual role ID
+        min_minutes: 0
+
+      # Regular - 5 hours of voice time
+      - name: "Regular"
+        role_id: 222222222222222222  # Replace with actual role ID
+        min_minutes: 300  # 5 hours
+
+      # Grinder - 20 hours of voice time
+      - name: "Grinder"
+        role_id: 333333333333333333  # Replace with actual role ID
+        min_minutes: 1200  # 20 hours
+
+      # No-Life - 60 hours of voice time
+      - name: "No-Life"
+        role_id: 444444444444444444  # Replace with actual role ID
+        min_minutes: 3600  # 60 hours
+
+      # Legend - 150 hours of voice time
+      - name: "Legend"
+        role_id: 555555555555555555  # Replace with actual role ID
+        min_minutes: 9000  # 150 hours
+
+# To add another server, add another guild ID entry:
+# "987654321098765432":
+#   tiers:
+#     - name: "Newbie"
+#       role_id: 999999999999999999
+#       min_minutes: 0
