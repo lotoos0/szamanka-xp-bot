@@ -39,44 +39,36 @@ async def leaderboard(ctx: discord.ApplicationContext):
             )
             return
 
-        # Build the embed
-        embed = discord.Embed(
-            title="🏆 XP Leaderboard",
-            description=f"Top {len(top_users)} users on {ctx.guild.name}",
-            color=discord.Color.gold()
-        )
+        # Build the message as plain text
+        lines = [
+            "🏆 **XP Leaderboard**",
+            f"*Top {len(top_users)} users on {ctx.guild.name}*",
+            ""  # Empty line for spacing
+        ]
 
-        # Add users to embed
-        leaderboard_text = []
+        # Add users
         for rank, user_stats in enumerate(top_users, 1):
             # Try to get the Discord user object
             user = ctx.guild.get_member(user_stats.user_id)
-            username = user.display_name if user else f"User {user_stats.user_id}"
 
-            # Get medal for top 3
-            medal = MEDALS.get(rank, f"`#{rank}`")
-
-            # Format voice time
-            hours = user_stats.total_voice_hours
-            if hours >= 1:
-                time_str = f"{hours:.1f}h"
-            else:
-                time_str = f"{user_stats.total_voice_minutes}m"
+            # Get medal for top 3, otherwise just number
+            medal = MEDALS.get(rank, f"#{rank}")
 
             # Build line
-            line = (
-                f"{medal} **{username}** - "
-                f"Level {user_stats.level} ({user_stats.total_xp:,} XP) • "
-                f"{time_str} voice"
-            )
-            leaderboard_text.append(line)
+            if user:
+                line = f"{medal} {user.mention} - **LVL: {user_stats.level}**"
+            else:
+                line = f"{medal} Unknown User - **LVL: {user_stats.level}**"
 
-        embed.description = "\n".join(leaderboard_text)
+            lines.append(line)
 
         # Add footer
-        embed.set_footer(text=f"Earn {6} XP per minute in voice channels")
+        lines.append("")  # Empty line
+        lines.append(f"*Earn {6} XP per minute in voice channels*")
 
-        await ctx.respond(embed=embed)
+        # Join all lines and send
+        message = "\n".join(lines)
+        await ctx.respond(message)
         logger.info(f"/leaderboard used in {ctx.guild.name} by {ctx.author}")
 
     except Exception as e:
