@@ -6,7 +6,7 @@ import logging
 
 from .config import Config
 from . import db
-from .commands import leaderboard
+from .commands import leaderboard, rank
 
 # Setup logging
 logging.basicConfig(
@@ -40,6 +40,11 @@ async def on_ready():
         logger.error(f"Failed to connect to database: {e}", exc_info=True)
         logger.warning("Bot will continue without database functionality")
 
+    # Sync slash commands (force update)
+    logger.info("Syncing slash commands with Discord...")
+    await bot.sync_commands()
+    logger.info(f"Synced {len(bot.pending_application_commands)} slash commands")
+
     logger.info("XPBot is ready!")
 
 
@@ -67,6 +72,15 @@ async def ping(ctx: discord.ApplicationContext):
 async def leaderboard_command(ctx: discord.ApplicationContext):
     """Show the XP leaderboard."""
     await leaderboard(ctx)
+
+
+@bot.slash_command(name="rank", description="Show your XP rank and stats")
+async def rank_command(
+    ctx: discord.ApplicationContext,
+    user: discord.Option(discord.Member, description="User to check (optional)", required=False, default=None)
+):
+    """Show rank stats for a user."""
+    await rank(ctx, user)
 
 
 def main():

@@ -4,6 +4,26 @@ from dataclasses import dataclass
 from datetime import datetime
 
 
+def xp_needed_for_level(level: int) -> int:
+    """
+    Calculate XP needed to reach the next level.
+
+    Formula: 5 * level^2 + 50 * level + 100
+
+    Examples:
+        Level 1 -> 155 XP
+        Level 10 -> 1100 XP
+        Level 50 -> 15100 XP
+
+    Args:
+        level: Current level
+
+    Returns:
+        XP needed to advance to next level
+    """
+    return 5 * (level ** 2) + 50 * level + 100
+
+
 @dataclass
 class UserStats:
     """User XP and voice statistics."""
