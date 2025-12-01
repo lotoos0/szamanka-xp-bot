@@ -5,6 +5,8 @@ from discord.ext import commands
 import logging
 
 from .config import Config
+from . import db
+from .commands import leaderboard
 
 # Setup logging
 logging.basicConfig(
@@ -29,7 +31,24 @@ async def on_ready():
     """Called when bot is ready and connected."""
     logger.info(f"Bot logged in as {bot.user} (ID: {bot.user.id})")
     logger.info(f"Connected to {len(bot.guilds)} guild(s)")
+
+    # Initialize database connection pool
+    try:
+        await db.init_db_pool()
+        logger.info("Database connected successfully")
+    except Exception as e:
+        logger.error(f"Failed to connect to database: {e}", exc_info=True)
+        logger.warning("Bot will continue without database functionality")
+
     logger.info("XPBot is ready!")
+
+
+@bot.event
+async def on_close():
+    """Called when bot is shutting down."""
+    logger.info("Bot shutting down...")
+    await db.close_db_pool()
+    logger.info("Database connection closed")
 
 
 @bot.slash_command(name="ping", description="Check if bot is online")
@@ -42,6 +61,12 @@ async def ping(ctx: discord.ApplicationContext):
         f"Ready to track voice XP!"
     )
     logger.info(f"/ping used by {ctx.author} in {ctx.guild.name}")
+
+
+@bot.slash_command(name="leaderboard", description="Show top 10 users by XP")
+async def leaderboard_command(ctx: discord.ApplicationContext):
+    """Show the XP leaderboard."""
+    await leaderboard(ctx)
 
 
 def main():
