@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 import yaml
+import discord
 
 logger = logging.getLogger("xpbot.roles")
 
@@ -124,4 +125,117 @@ def load_roles_config(config_path: str | Path = "config/roles_config.yaml") -> d
     return roles_config
 
 
-# TODO: DAY06.5 - implement update_user_voice_role
+async def update_user_voice_role(
+    member: discord.Member,
+    guild_roles: GuildRolesConfig,
+    total_voice_sec: int,
+) -> None:
+    """
+    Update user's voice tier role based on total_voice_sec.
+
+    Assigns the highest tier role the user qualifies for and removes
+    lower tier roles. Only one voice tier role is assigned at a time.
+
+    Args:
+        member: Discord member to update
+        guild_roles: Guild's role configuration
+        total_voice_sec: Total voice seconds for the member
+
+    Note:
+        Requires bot to have MANAGE_ROLES permission and bot's highest
+        role must be above all configured tier roles in the hierarchy.
+    """
+    # Check if bot has permission to manage roles
+    if not member.guild.me.guild_permissions.manage_roles:
+        logger.error(f"Bot missing MANAGE_ROLES permission in guild {member.guild.id} ({member.guild.name})")
+        return
+
+    # Find which tier the user should have (if any)
+    eligible_tier = guild_roles.get_eligible_tier(total_voice_sec)
+
+    # Get all voice-tier role IDs from config
+    voice_role_ids = guild_roles.get_all_role_ids()
+
+    # Get bot's top role for hierarchy checking
+    bot_top_role = member.guild.me.top_role
+
+    # Find which voice-tier roles the member currently has
+    current_voice_roles = [role for role in member.roles if role.id in voice_role_ids]
+
+    # Determine what changes need to be made
+    if eligible_tier is None:
+        # User doesn't qualify for any tier - remove all voice roles
+        if current_voice_roles:
+            logger.info(
+                f"User {member.display_name} ({member.id}) doesn't qualify for any tier "
+                f"({total_voice_sec}s = {total_voice_sec // 60}min). Removing {len(current_voice_roles)} role(s)."
+            )
+            roles_to_remove = current_voice_roles
+            roles_to_add = []
+        else:
+            # User has no voice roles and shouldn't have any - nothing to do
+            logger.debug(
+                f"User {member.display_name} ({member.id}) has no voice roles and doesn't qualify for any "
+                f"({total_voice_sec}s = {total_voice_sec // 60}min)"
+            )
+            return
+    else:
+        # User qualifies for a tier
+        target_role = member.guild.get_role(eligible_tier.role_id)
+
+        if target_role is None:
+            logger.error(
+                f"Role {eligible_tier.role_id} ({eligible_tier.name}) not found in guild {member.guild.id}. "
+                f"Check roles_config.yaml"
+            )
+            return
+
+        # Check role hierarchy - bot must be able to assign this role
+        if target_role >= bot_top_role:
+            logger.error(
+                f"Cannot assign role {target_role.name} to {member.display_name}: "
+                f"role is at or above bot's highest role ({bot_top_role.name}). "
+                f"Move bot's role higher in server settings."
+            )
+            return
+
+        # Check if user already has the correct role
+        if target_role in current_voice_roles and len(current_voice_roles) == 1:
+            # User already has exactly this role - nothing to do
+            logger.debug(
+                f"User {member.display_name} ({member.id}) already has correct role: "
+                f"{target_role.name} ({total_voice_sec}s = {total_voice_sec // 60}min)"
+            )
+            return
+
+        # User needs role change
+        roles_to_remove = [role for role in current_voice_roles if role.id != eligible_tier.role_id]
+        roles_to_add = [target_role] if target_role not in current_voice_roles else []
+
+        logger.info(
+            f"User {member.display_name} ({member.id}) qualifies for tier '{eligible_tier.name}' "
+            f"({total_voice_sec}s = {total_voice_sec // 60}min). "
+            f"Adding: {[r.name for r in roles_to_add]}, "
+            f"Removing: {[r.name for r in roles_to_remove]}"
+        )
+
+    # Apply role changes with error handling
+    try:
+        if roles_to_remove:
+            await member.remove_roles(*roles_to_remove, reason="Voice tier role update")
+            logger.info(f"Removed roles from {member.display_name}: {[r.name for r in roles_to_remove]}")
+
+        if roles_to_add:
+            await member.add_roles(*roles_to_add, reason="Voice tier role update")
+            logger.info(f"Added roles to {member.display_name}: {[r.name for r in roles_to_add]}")
+
+    except discord.Forbidden:
+        logger.error(
+            f"Missing permissions to manage roles for {member.display_name} ({member.id}) "
+            f"in guild {member.guild.name}. Check bot permissions and role hierarchy."
+        )
+    except discord.HTTPException as e:
+        logger.error(
+            f"Failed to update roles for {member.display_name} ({member.id}): {e}",
+            exc_info=True
+        )
