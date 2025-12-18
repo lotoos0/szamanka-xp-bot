@@ -5,7 +5,7 @@ Założenia tego planu:
 * Level-up message dopiero PO v0.1.
 * AWS/Terraform / K8s = drugi etap, jak core działa.
 
-Możesz nazwać commity np. `[XPBOT][DAY01] Init repo` itd.
+commity np. `[XPBOT][DAY01] Init repo` itd.
 
 ---
 
@@ -614,27 +614,3 @@ To możesz zrobić po Resilience-Lab albo jako M2 bota.
   * bot odpowiada na `/ping`,
   * XP leci,
   * leaderboard żyje.
-
-**Gotowe, gdy:** bot siedzi na EC2 i tyrka jak music bot kiedyś.
-
----
-
-## Podsumowanie – co masz po tym planie
-
-Po DAY01–DAY12:
-
-* Realny, działający bot:
-
-  * XP tylko za voice,
-  * XP/level zapisane w Postgresie,
-  * `/rank` + `/leaderboard` jako core,
-  * **Automatyczne role „voice-tier" zależne od czasu na voice**, w pełni konfigurowalne z pliku,
-  * ignore solo/muted/AFK,
-  * Docker + docker-compose,
-  * CI w GitHub Actions.
-
-Po DAY13–DAY14:
-
-* Bot stoi w AWS jako **żywy projekt DevOps/Cloud** w twoim portfolio.
-
----
